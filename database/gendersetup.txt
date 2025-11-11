@@ -1,0 +1,5 @@
+INSERT INTO `capstone1`.`gender` (gender_id, gender_name)
+VALUES
+  (1, '남자'),
+  (2, '여자')
+ON DUPLICATE KEY UPDATE gender_name = VALUES(gender_name);

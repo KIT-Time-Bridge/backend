@@ -1,0 +1,107 @@
+-- MySQL Workbench Forward Engineering
+
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+
+-- -----------------------------------------------------
+-- Schema mydb
+-- -----------------------------------------------------
+-- -----------------------------------------------------
+-- Schema capstone1
+-- -----------------------------------------------------
+
+-- -----------------------------------------------------
+-- Schema capstone1
+-- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `capstone1` DEFAULT CHARACTER SET utf8mb3 ;
+USE `capstone1` ;
+
+-- -----------------------------------------------------
+-- Table `capstone1`.`gender`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `capstone1`.`gender` (
+  `gender_id` INT NOT NULL AUTO_INCREMENT,
+  `gender_name` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`gender_id`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `capstone1`.`users`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `capstone1`.`users` (
+  `user_id` VARCHAR(45) NOT NULL,
+  `user_name` VARCHAR(45) NOT NULL,
+  `user_pw` VARCHAR(255) NOT NULL,
+  `user_email` VARCHAR(100) NOT NULL,
+  `birthday` DATE NOT NULL,
+  PRIMARY KEY (`user_id`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `capstone1`.`family_post`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `capstone1`.`family_post` (
+  `fp_id` CHAR(36) NOT NULL,
+  `face_img_aging` VARCHAR(255) NULL DEFAULT NULL,
+  `face_img_origin` VARCHAR(255) NULL DEFAULT NULL,
+  `photo_age` INT NULL DEFAULT NULL,
+  `missing_birth` DATE NOT NULL,
+  `missing_date` DATE NULL DEFAULT NULL,
+  `missing_name` VARCHAR(45) NOT NULL,
+  `missing_situation` TEXT NULL DEFAULT NULL,
+  `missing_extra_evidence` TEXT NULL DEFAULT NULL,
+  `missing_place` VARCHAR(100) NULL DEFAULT NULL,
+  `user_id` VARCHAR(45) NOT NULL,
+  `gender_id` INT NOT NULL,
+  PRIMARY KEY (`fp_id`),
+  INDEX `fk_FAMILY_POST_USER_idx` (`user_id` ASC) VISIBLE,
+  INDEX `fk_FAMILY_POST_GENDER1_idx` (`gender_id` ASC) VISIBLE,
+  CONSTRAINT `fk_FAMILY_POST_GENDER1`
+    FOREIGN KEY (`gender_id`)
+    REFERENCES `capstone1`.`gender` (`gender_id`),
+  CONSTRAINT `fk_FAMILY_POST_USER`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `capstone1`.`users` (`user_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `capstone1`.`missing_post`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `capstone1`.`missing_post` (
+  `mp_id` CHAR(36) NOT NULL,
+  `face_img_origin` VARCHAR(255) NULL DEFAULT NULL,
+  `missing_date` DATE NULL DEFAULT NULL,
+  `missing_name` VARCHAR(45) NOT NULL,
+  `missing_situation` TEXT NULL DEFAULT NULL,
+  `missing_birth` DATE NULL DEFAULT NULL,
+  `missing_place` VARCHAR(100) NULL DEFAULT NULL,
+  `missing_extra_evidence` VARCHAR(255) NULL DEFAULT NULL,
+  `user_id` VARCHAR(45) NOT NULL,
+  `gender_id` INT NOT NULL,
+  PRIMARY KEY (`mp_id`),
+  INDEX `fk_MISSING_POST_USER1_idx` (`user_id` ASC) VISIBLE,
+  INDEX `fk_MISSING_POST_GENDER1_idx` (`gender_id` ASC) VISIBLE,
+  CONSTRAINT `fk_MISSING_POST_GENDER1`
+    FOREIGN KEY (`gender_id`)
+    REFERENCES `capstone1`.`gender` (`gender_id`),
+  CONSTRAINT `fk_MISSING_POST_USER1`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `capstone1`.`users` (`user_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
