@@ -135,28 +135,18 @@ class UserService:
 
         # 메일 전송
         try:
-            print(f"[DEBUG] SMTP 연결 시도: {smtp_server}:{smtp_port}")
-            print(f"[DEBUG] 발신자: {sender_email}")
-            print(f"[DEBUG] 수신자: {to_email}")
-            print(f"[DEBUG] 비밀번호 길이: {len(sender_password) if sender_password else 0}")
-            
-            with smtplib.SMTP(smtp_server, smtp_port, timeout=10) as server:
-                print("[DEBUG] SMTP 서버 연결 성공")
+            # 타임아웃을 5초로 줄여서 빠른 실패 처리
+            with smtplib.SMTP(smtp_server, smtp_port, timeout=5) as server:
                 server.starttls()
-                print("[DEBUG] TLS 시작 성공")
                 server.login(sender_email, sender_password)
-                print("[DEBUG] 로그인 성공")
                 server.sendmail(sender_email, to_email, msg.as_string())
-                print("[DEBUG] 메일 전송 성공")
             return True
         except smtplib.SMTPAuthenticationError as e:
             print(f"[ERROR] SMTP 인증 실패: {e}")
-            raise HTTPException(status_code=500, detail=f"메일 인증에 실패했습니다. Gmail 앱 비밀번호를 확인해주세요: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"메일 인증에 실패했습니다. Gmail 앱 비밀번호를 확인해주세요.")
         except smtplib.SMTPException as e:
             print(f"[ERROR] SMTP 오류: {e}")
             raise HTTPException(status_code=500, detail=f"SMTP 오류가 발생했습니다: {str(e)}")
         except Exception as e:
             print(f"[ERROR] 메일 전송 실패: {type(e).__name__}: {e}")
-            import traceback
-            traceback.print_exc()
-            raise HTTPException(status_code=500, detail=f"메일 전송에 실패했습니다: {type(e).__name__}: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"메일 전송에 실패했습니다: {str(e)}")
