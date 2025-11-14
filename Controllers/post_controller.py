@@ -109,3 +109,13 @@ class PostController:
         session_manager=SessionManager()
         user_id=session_manager.get_user(session_id)
         return await service.image_similarity(missingId,db, user_id)
+    
+    def get_pending_posts(self, db: Session):
+        """승인 대기 게시글 조회"""
+        service = PostService()
+        return service.get_pending_posts(db)
+    
+    def approve_post(self, db: Session, post_id: str):
+        """게시글 승인"""
+        service = PostService()
+        return service.approve_post(db, post_id)

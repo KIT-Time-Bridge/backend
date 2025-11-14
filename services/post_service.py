@@ -49,6 +49,30 @@ class PostService:
         return StreamingResponse(BytesIO(resp.content), media_type=media_type)
 
     #  등록된 실종글 검색
+    def get_pending_posts(self, db: Session):
+        """승인 대기 게시글 조회 (실종자, 가족 찾기)"""
+        repo = PostRepository(db)
+        missing_posts = repo.get_pending_missing_posts()
+        family_posts = repo.get_pending_family_posts()
+        return {
+            "missing_posts": missing_posts,
+            "family_posts": family_posts
+        }
+    
+    def approve_post(self, db: Session, post_id: str):
+        """게시글 승인"""
+        repo = PostRepository(db)
+        if post_id.startswith("m"):
+            post = repo.approve_missing_post(post_id)
+        elif post_id.startswith("f"):
+            post = repo.approve_family_post(post_id)
+        else:
+            raise HTTPException(status_code=400, detail="잘못된 게시글 ID 형식입니다.")
+        
+        if not post:
+            raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+        return post
+    
     def register_missing_search(self, user_id: str, db: Session):
         repo = PostRepository(db)
         return repo.get_register_missing_by_id(user_id)

@@ -50,3 +50,10 @@ class UserRepository:
             self.db.delete(user)
             self.db.commit()
             return True
+    
+    def is_admin(self, user_id: str) -> bool:
+        """사용자가 관리자인지 확인"""
+        user = self.get_by_id(user_id)
+        if not user:
+            return False
+        return user.isAdmin == True

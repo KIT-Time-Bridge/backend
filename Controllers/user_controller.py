@@ -61,3 +61,12 @@ class UserController:
     def session_is_vaild(self, session_id):
         session_manager=SessionManager()
         return session_manager.is_valid(session_id)
+    
+    def check_is_admin(self, session_id: str, db: Session) -> bool:
+        """관리자 여부 확인"""
+        session_manager = SessionManager()
+        user_id = session_manager.get_user(session_id)
+        if not user_id:
+            return False
+        service = UserService()
+        return service.check_is_admin(db, user_id)

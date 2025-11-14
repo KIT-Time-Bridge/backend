@@ -242,6 +242,36 @@ class PostRepository:
     def get_family_post_by_id(self, missing_id):
         return self.db.query(FamilyPost).filter(FamilyPost.fp_id==missing_id).first()
     
+    def get_pending_missing_posts(self):
+        """isAccept가 False인 실종자 게시글 조회"""
+        return self.db.query(MissingPost).filter(MissingPost.isAccept == False).all()
+    
+    def get_pending_family_posts(self):
+        """isAccept가 False 또는 None인 가족 찾기 게시글 조회"""
+        return self.db.query(FamilyPost).filter(
+            (FamilyPost.isAccept == False) | (FamilyPost.isAccept == None)
+        ).all()
+    
+    def approve_missing_post(self, missing_id: str):
+        """실종자 게시글 승인 (isAccept를 True로 변경)"""
+        post = self.get_missing_post_by_id(missing_id)
+        if not post:
+            return None
+        post.isAccept = True
+        self.db.commit()
+        self.db.refresh(post)
+        return post
+    
+    def approve_family_post(self, missing_id: str):
+        """가족 찾기 게시글 승인 (isAccept를 True로 변경)"""
+        post = self.get_family_post_by_id(missing_id)
+        if not post:
+            return None
+        post.isAccept = True
+        self.db.commit()
+        self.db.refresh(post)
+        return post
+    
     def delete_missing_post(self, missing_post):
         try:
             self.db.delete(missing_post)

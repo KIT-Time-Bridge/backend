@@ -132,6 +132,36 @@ async def get_image_similarity(missingId:str,request:Request, db: Session = Depe
     session_id=request.session.get("session_id")
     return await post_controller.image_similarity(missingId, db, session_id )
 
+@router.get("/pending")
+def get_pending_posts(request:Request, db: Session = Depends(get_db)):
+    """승인 대기 게시글 조회 (관리자 전용)"""
+    # 관리자 확인
+    from Controllers.user_controller import UserController
+    user_controller = UserController()
+    session_id = request.session.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    if not user_controller.check_is_admin(session_id, db):
+        raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
+    
+    post_controller = PostController()
+    return post_controller.get_pending_posts(db)
+
+@router.post("/approve")
+def approve_post(request:Request, post_id: str, db: Session = Depends(get_db)):
+    """게시글 승인 (관리자 전용)"""
+    # 관리자 확인
+    from Controllers.user_controller import UserController
+    user_controller = UserController()
+    session_id = request.session.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    if not user_controller.check_is_admin(session_id, db):
+        raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
+    
+    post_controller = PostController()
+    return post_controller.approve_post(db, post_id)
+
 @router.get("/test")
 def test(req: int):
     return {"id": req, "message": "hello"}

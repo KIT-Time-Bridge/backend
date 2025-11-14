@@ -70,3 +70,13 @@ def session_status(request:Request):
     session_id=request.session.get("session_id")
     controller=UserController()
     return controller.session_is_vaild(session_id)
+
+@router.get("/is_admin")
+def check_is_admin(request:Request, db: Session = Depends(get_db)):
+    """관리자 여부 확인"""
+    session_id=request.session.get("session_id")
+    if not session_id:
+        return {"is_admin": False}
+    controller=UserController()
+    is_admin = controller.check_is_admin(session_id, db)
+    return {"is_admin": is_admin}

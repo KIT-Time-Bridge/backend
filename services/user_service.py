@@ -71,6 +71,11 @@ class UserService:
         if not deleted:
             raise HTTPException(status_code=404, detail="존재하지 않는 사용자입니다.")
         return True
+    
+    def check_is_admin(self, db: Session, user_id: str) -> bool:
+        """사용자가 관리자인지 확인"""
+        repo = UserRepository(db)
+        return repo.is_admin(user_id)
 
 
     async def send_email(self, user_id: str, text: str, db: Session, missing_id: str) -> bool:
