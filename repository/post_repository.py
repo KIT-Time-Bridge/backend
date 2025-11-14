@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from repository.post_model import FamilyPost, MissingPost
 from sqlalchemy import func, cast, Integer
 from typing import Optional
-from datetime import date
+from datetime import date, datetime
 import math
 
 class PostRepository:
@@ -114,7 +114,7 @@ class PostRepository:
             "missing_posts": missing_posts
         }
     
-    def get_all_missing_fp(self, pageNum: int,  pageSize: int = 12, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None):
+    def get_all_missing_fp(self, pageNum: int,  pageSize: int = 12, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
         offset = (pageNum - 1) * pageSize
 
         # ✅ 게시글 데이터 조회
@@ -127,6 +127,16 @@ class PostRepository:
             query = query.filter(FamilyPost.missing_situation.like(f"%{missing_situation}%"))
         if missing_extra_evidence:
             query = query.filter(FamilyPost.missing_extra_evidence.like(f"%{missing_extra_evidence}%"))
+        if gender_id:
+            query = query.filter(FamilyPost.gender_id == gender_id)
+        if missing_birth:
+            birth_date = datetime.strptime(missing_birth, "%Y-%m-%d").date()
+            query = query.filter(FamilyPost.missing_birth == birth_date)
+        if missing_date:
+            date_obj = datetime.strptime(missing_date, "%Y-%m-%d").date()
+            query = query.filter(FamilyPost.missing_date == date_obj)
+        if missing_place:
+            query = query.filter(FamilyPost.missing_place.like(f"%{missing_place}%"))
 
         # 전체 개수 조회 (필터링 후)
         total_count = query.count()
@@ -150,7 +160,7 @@ class PostRepository:
         }
 
 
-    def get_all_missing_mp(self, pageNum: int,  pageSize: int = 12, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None):
+    def get_all_missing_mp(self, pageNum: int,  pageSize: int = 12, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
         offset = (pageNum - 1) * pageSize
 
         # ✅ 게시글 데이터 조회
@@ -163,6 +173,16 @@ class PostRepository:
             query = query.filter(MissingPost.missing_situation.like(f"%{missing_situation}%"))
         if missing_extra_evidence:
             query = query.filter(MissingPost.missing_extra_evidence.like(f"%{missing_extra_evidence}%"))
+        if gender_id:
+            query = query.filter(MissingPost.gender_id == gender_id)
+        if missing_birth:
+            birth_date = datetime.strptime(missing_birth, "%Y-%m-%d").date()
+            query = query.filter(MissingPost.missing_birth == birth_date)
+        if missing_date:
+            date_obj = datetime.strptime(missing_date, "%Y-%m-%d").date()
+            query = query.filter(MissingPost.missing_date == date_obj)
+        if missing_place:
+            query = query.filter(MissingPost.missing_place.like(f"%{missing_place}%"))
 
         # 전체 개수 조회 (필터링 후)
         total_count = query.count()

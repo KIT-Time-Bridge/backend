@@ -55,13 +55,13 @@ class PostController:
         user_id=session_manager.get_user(session_id)
         return post_service.register_missing_search(user_id, db)
     
-    def all_missing_search_by_family(self, pageNum:int, db:Session, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None):
+    def all_missing_search_by_family(self, pageNum:int, db:Session, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
         post_service=PostService()
-        return post_service.all_missing_search_by_family(pageNum, db, missing_name, missing_situation, missing_extra_evidence)
+        return post_service.all_missing_search_by_family(pageNum, db, missing_name, missing_situation, missing_extra_evidence, gender_id, missing_birth, missing_date, missing_place)
     
-    def all_missing_search_by_missing(self, pageNum:int, db:Session, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None):
+    def all_missing_search_by_missing(self, pageNum:int, db:Session, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
         post_service=PostService()
-        return post_service.all_missing_search_by_missing(pageNum, db, missing_name, missing_situation, missing_extra_evidence)
+        return post_service.all_missing_search_by_missing(pageNum, db, missing_name, missing_situation, missing_extra_evidence, gender_id, missing_birth, missing_date, missing_place)
     
     def detail_missing_search(self, db:Session, missing_id):
         post_service=PostService()
