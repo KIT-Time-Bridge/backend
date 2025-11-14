@@ -53,13 +53,13 @@ class PostService:
         repo = PostRepository(db)
         return repo.get_register_missing_by_id(user_id)
 
-    def all_missing_search_by_family(self, pageNum: int, db: Session):
+    def all_missing_search_by_family(self, pageNum: int, db: Session, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None):
         repo = PostRepository(db)
-        return repo.get_all_missing_fp(pageNum, 12)
+        return repo.get_all_missing_fp(pageNum, 12, missing_name, missing_situation, missing_extra_evidence)
 
-    def all_missing_search_by_missing(self, pageNum: int, db: Session):
+    def all_missing_search_by_missing(self, pageNum: int, db: Session, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None):
         repo = PostRepository(db)
-        return repo.get_all_missing_mp(pageNum, 12)
+        return repo.get_all_missing_mp(pageNum, 12, missing_name, missing_situation, missing_extra_evidence)
 
     def detail_missing_search(self, db: Session, missing_id: str):
         repo = PostRepository(db)

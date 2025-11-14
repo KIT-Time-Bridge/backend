@@ -114,16 +114,22 @@ class PostRepository:
             "missing_posts": missing_posts
         }
     
-    def get_all_missing_fp(self, pageNum: int,  pageSize: int = 12):
+    def get_all_missing_fp(self, pageNum: int,  pageSize: int = 12, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None):
         offset = (pageNum - 1) * pageSize
-
-        # ✅ 내 게시글 제외한 전체 개수 조회
-        total_count_query = self.db.query(func.count(FamilyPost.fp_id))
-        total_count = total_count_query.scalar()
 
         # ✅ 게시글 데이터 조회
         query = self.db.query(FamilyPost)
 
+        # 필터링 조건 추가
+        if missing_name:
+            query = query.filter(FamilyPost.missing_name.like(f"%{missing_name}%"))
+        if missing_situation:
+            query = query.filter(FamilyPost.missing_situation.like(f"%{missing_situation}%"))
+        if missing_extra_evidence:
+            query = query.filter(FamilyPost.missing_extra_evidence.like(f"%{missing_extra_evidence}%"))
+
+        # 전체 개수 조회 (필터링 후)
+        total_count = query.count()
 
         posts = (
             query.order_by(FamilyPost.fp_id)
@@ -144,16 +150,22 @@ class PostRepository:
         }
 
 
-    def get_all_missing_mp(self, pageNum: int,  pageSize: int = 12):
+    def get_all_missing_mp(self, pageNum: int,  pageSize: int = 12, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None):
         offset = (pageNum - 1) * pageSize
-
-        total_count_query = self.db.query(func.count(MissingPost.mp_id))
-
-        total_count = total_count_query.scalar()
 
         # ✅ 게시글 데이터 조회
         query = self.db.query(MissingPost)
 
+        # 필터링 조건 추가
+        if missing_name:
+            query = query.filter(MissingPost.missing_name.like(f"%{missing_name}%"))
+        if missing_situation:
+            query = query.filter(MissingPost.missing_situation.like(f"%{missing_situation}%"))
+        if missing_extra_evidence:
+            query = query.filter(MissingPost.missing_extra_evidence.like(f"%{missing_extra_evidence}%"))
+
+        # 전체 개수 조회 (필터링 후)
+        total_count = query.count()
 
         posts = (
             query.order_by(MissingPost.mp_id)

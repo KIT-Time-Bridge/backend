@@ -75,14 +75,14 @@ def register_missing_search(request:Request, db: Session = Depends(get_db)):
 
 
 @router.post("/all_missing_search_missing")
-def all_missing_search_in_missing(pageNum:int, request:Request,  db: Session = Depends(get_db)):
+def all_missing_search_in_missing(pageNum:int, request:Request, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None, db: Session = Depends(get_db)):
     post_controller=PostController()
-    return post_controller.all_missing_search_by_missing(pageNum, db)
+    return post_controller.all_missing_search_by_missing(pageNum, db, missing_name, missing_situation, missing_extra_evidence)
 
 @router.post("/all_missing_search_family")
-def all_missing_search_in_family(pageNum:int, request:Request, db: Session = Depends(get_db)):
+def all_missing_search_in_family(pageNum:int, request:Request, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None, db: Session = Depends(get_db)):
     post_controller=PostController()
-    return post_controller.all_missing_search_by_family(pageNum,db)
+    return post_controller.all_missing_search_by_family(pageNum, db, missing_name, missing_situation, missing_extra_evidence)
 
 @router.post("/detail_missing_search")
 def detail_missing_search(missing_id, db: Session = Depends(get_db)):
