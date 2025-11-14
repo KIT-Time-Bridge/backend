@@ -54,7 +54,7 @@ def logout(request:Request):
 def send_mail(request:Request, missing_id:str, text:str, db: Session = Depends(get_db)):
     controller=UserController()
     session_id=request.session.get("session_id")
-    return controller.send_email(session_id)
+    return controller.send_email(session_id, missing_id, text, db)
 @router.get("/status")
 def session_status(request:Request):
     session_id=request.session.get("session_id")
