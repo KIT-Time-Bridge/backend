@@ -114,19 +114,29 @@ class PostRepository:
             "missing_posts": missing_posts
         }
     
-    def get_all_missing_fp(self, pageNum: int,  pageSize: int = 12, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
+    def get_all_missing_fp(self, pageNum: int,  pageSize: int = 12, search_keywords: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
         offset = (pageNum - 1) * pageSize
 
         # ✅ 게시글 데이터 조회
         query = self.db.query(FamilyPost)
 
-        # 필터링 조건 추가
-        if missing_name:
-            query = query.filter(FamilyPost.missing_name.like(f"%{missing_name}%"))
-        if missing_situation:
-            query = query.filter(FamilyPost.missing_situation.like(f"%{missing_situation}%"))
-        if missing_extra_evidence:
-            query = query.filter(FamilyPost.missing_extra_evidence.like(f"%{missing_extra_evidence}%"))
+        # 통합 검색: search_keywords를 이름, 실종상황, 추가단서에서 모두 검색
+        if search_keywords:
+            keywords = search_keywords.split()  # 띄어쓰기로 키워드 분리
+            from sqlalchemy import or_
+            conditions = []
+            for keyword in keywords:
+                keyword_condition = or_(
+                    FamilyPost.missing_name.like(f"%{keyword}%"),
+                    FamilyPost.missing_situation.like(f"%{keyword}%"),
+                    FamilyPost.missing_extra_evidence.like(f"%{keyword}%")
+                )
+                conditions.append(keyword_condition)
+            if conditions:
+                # 모든 키워드가 포함되어야 함 (AND 조건)
+                from sqlalchemy import and_
+                query = query.filter(and_(*conditions))
+        
         if gender_id:
             query = query.filter(FamilyPost.gender_id == gender_id)
         if missing_birth:
@@ -160,19 +170,29 @@ class PostRepository:
         }
 
 
-    def get_all_missing_mp(self, pageNum: int,  pageSize: int = 12, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
+    def get_all_missing_mp(self, pageNum: int,  pageSize: int = 12, search_keywords: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
         offset = (pageNum - 1) * pageSize
 
         # ✅ 게시글 데이터 조회
         query = self.db.query(MissingPost)
 
-        # 필터링 조건 추가
-        if missing_name:
-            query = query.filter(MissingPost.missing_name.like(f"%{missing_name}%"))
-        if missing_situation:
-            query = query.filter(MissingPost.missing_situation.like(f"%{missing_situation}%"))
-        if missing_extra_evidence:
-            query = query.filter(MissingPost.missing_extra_evidence.like(f"%{missing_extra_evidence}%"))
+        # 통합 검색: search_keywords를 이름, 실종상황, 추가단서에서 모두 검색
+        if search_keywords:
+            keywords = search_keywords.split()  # 띄어쓰기로 키워드 분리
+            from sqlalchemy import or_
+            conditions = []
+            for keyword in keywords:
+                keyword_condition = or_(
+                    MissingPost.missing_name.like(f"%{keyword}%"),
+                    MissingPost.missing_situation.like(f"%{keyword}%"),
+                    MissingPost.missing_extra_evidence.like(f"%{keyword}%")
+                )
+                conditions.append(keyword_condition)
+            if conditions:
+                # 모든 키워드가 포함되어야 함 (AND 조건)
+                from sqlalchemy import and_
+                query = query.filter(and_(*conditions))
+        
         if gender_id:
             query = query.filter(MissingPost.gender_id == gender_id)
         if missing_birth:

@@ -53,13 +53,13 @@ class PostService:
         repo = PostRepository(db)
         return repo.get_register_missing_by_id(user_id)
 
-    def all_missing_search_by_family(self, pageNum: int, db: Session, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
+    def all_missing_search_by_family(self, pageNum: int, db: Session, search_keywords: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
         repo = PostRepository(db)
-        return repo.get_all_missing_fp(pageNum, 12, missing_name, missing_situation, missing_extra_evidence, gender_id, missing_birth, missing_date, missing_place)
+        return repo.get_all_missing_fp(pageNum, 12, search_keywords, gender_id, missing_birth, missing_date, missing_place)
 
-    def all_missing_search_by_missing(self, pageNum: int, db: Session, missing_name: Optional[str] = None, missing_situation: Optional[str] = None, missing_extra_evidence: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
+    def all_missing_search_by_missing(self, pageNum: int, db: Session, search_keywords: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
         repo = PostRepository(db)
-        return repo.get_all_missing_mp(pageNum, 12, missing_name, missing_situation, missing_extra_evidence, gender_id, missing_birth, missing_date, missing_place)
+        return repo.get_all_missing_mp(pageNum, 12, search_keywords, gender_id, missing_birth, missing_date, missing_place)
 
     def detail_missing_search(self, db: Session, missing_id: str):
         repo = PostRepository(db)
