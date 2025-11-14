@@ -72,7 +72,7 @@ class UserService:
         return True
 
 
-    def send_email(self, user_id: str, text: str, db: Session, missing_id: str) -> bool:
+    async def send_email(self, user_id: str, text: str, db: Session, missing_id: str) -> bool:
         if not user_id:
             raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
         if not missing_id:
@@ -133,13 +133,15 @@ class UserService:
         msg["Subject"] = Header(subject, "utf-8")
         msg.attach(MIMEText(full_text, "plain"))
 
-        # 메일 전송
+        # 메일 전송 (비동기로 처리)
+        import asyncio
         try:
-            # 타임아웃을 5초로 줄여서 빠른 실패 처리
-            with smtplib.SMTP(smtp_server, smtp_port, timeout=5) as server:
-                server.starttls()
-                server.login(sender_email, sender_password)
-                server.sendmail(sender_email, to_email, msg.as_string())
+            # SMTP 작업을 별도 스레드에서 실행하여 블로킹 방지
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(
+                None,
+                lambda: self._send_smtp_email(smtp_server, smtp_port, sender_email, sender_password, to_email, msg)
+            )
             return True
         except smtplib.SMTPAuthenticationError as e:
             print(f"[ERROR] SMTP 인증 실패: {e}")
@@ -150,3 +152,10 @@ class UserService:
         except Exception as e:
             print(f"[ERROR] 메일 전송 실패: {type(e).__name__}: {e}")
             raise HTTPException(status_code=500, detail=f"메일 전송에 실패했습니다: {str(e)}")
+    
+    def _send_smtp_email(self, smtp_server, smtp_port, sender_email, sender_password, to_email, msg):
+        """SMTP 메일 전송 헬퍼 함수 (동기)"""
+        with smtplib.SMTP(smtp_server, smtp_port, timeout=5) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, to_email, msg.as_string())

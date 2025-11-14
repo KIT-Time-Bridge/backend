@@ -51,13 +51,13 @@ def logout(request:Request):
     return JSONResponse(content={"message": "Logged out successfully"})
 
 @router.post("/send_to_mail")
-def send_mail(request:Request, missing_id:str, text:str, db: Session = Depends(get_db)):
+async def send_mail(request:Request, missing_id:str, text:str, db: Session = Depends(get_db)):
     try:
         controller=UserController()
         session_id=request.session.get("session_id")
         if not session_id:
             raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
-        return controller.send_email(session_id, missing_id, text, db)
+        return await controller.send_email(session_id, missing_id, text, db)
     except HTTPException:
         raise
     except Exception as e:

@@ -52,11 +52,11 @@ class UserController:
         session_manager.delete_session(session_id)
         return True
     
-    def send_email(self, session_id, missing_id, text, db:Session):
+    async def send_email(self, session_id, missing_id, text, db:Session):
         session_manager=SessionManager()
         service=UserService()
         user_id=session_manager.get_user(session_id)
-        return service.send_email(user_id, text, db, missing_id)
+        return await service.send_email(user_id, text, db, missing_id)
     
     def session_is_vaild(self, session_id):
         session_manager=SessionManager()
