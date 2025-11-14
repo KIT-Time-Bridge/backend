@@ -52,9 +52,19 @@ def logout(request:Request):
 
 @router.post("/send_to_mail")
 def send_mail(request:Request, missing_id:str, text:str, db: Session = Depends(get_db)):
-    controller=UserController()
-    session_id=request.session.get("session_id")
-    return controller.send_email(session_id, missing_id, text, db)
+    try:
+        controller=UserController()
+        session_id=request.session.get("session_id")
+        if not session_id:
+            raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+        return controller.send_email(session_id, missing_id, text, db)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] send_to_mail 라우터 오류: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"서버 오류가 발생했습니다: {str(e)}")
 @router.get("/status")
 def session_status(request:Request):
     session_id=request.session.get("session_id")

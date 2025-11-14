@@ -8,6 +8,7 @@ from email.mime.multipart import MIMEMultipart
 from email.utils import formataddr
 from email.header import Header
 import os
+from dotenv import load_dotenv
 from fastapi import HTTPException
 
 from repository.post_repository import PostRepository
@@ -15,6 +16,9 @@ from repository.user_repository import UserRepository   # DAO → Repository로 
 from repository.user_model import User                  # ORM 엔티티
 from schemas.user_schema import UserCreate, UserLogin   # Pydantic DTO (입력만 사용)
 from services.session_service import SessionManager
+
+# .env 파일 로드
+load_dotenv()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -88,7 +92,11 @@ class UserService:
         
         if not sender_password:
             print("경고: GMAIL_APP_PASSWORD 환경 변수가 설정되지 않았습니다.")
-            raise HTTPException(status_code=500, detail="메일 서버 설정 오류입니다.")
+            print("현재 환경 변수:", os.environ.get("GMAIL_APP_PASSWORD", "없음"))
+            raise HTTPException(
+                status_code=500, 
+                detail="메일 서버 설정 오류입니다. GMAIL_APP_PASSWORD 환경 변수를 설정해주세요."
+            )
 
         # missing_id로 게시글 작성자 찾기
         if not missing_id or len(missing_id) == 0:
@@ -127,11 +135,28 @@ class UserService:
 
         # 메일 전송
         try:
-            with smtplib.SMTP(smtp_server, smtp_port) as server:
+            print(f"[DEBUG] SMTP 연결 시도: {smtp_server}:{smtp_port}")
+            print(f"[DEBUG] 발신자: {sender_email}")
+            print(f"[DEBUG] 수신자: {to_email}")
+            print(f"[DEBUG] 비밀번호 길이: {len(sender_password) if sender_password else 0}")
+            
+            with smtplib.SMTP(smtp_server, smtp_port, timeout=10) as server:
+                print("[DEBUG] SMTP 서버 연결 성공")
                 server.starttls()
+                print("[DEBUG] TLS 시작 성공")
                 server.login(sender_email, sender_password)
+                print("[DEBUG] 로그인 성공")
                 server.sendmail(sender_email, to_email, msg.as_string())
+                print("[DEBUG] 메일 전송 성공")
             return True
+        except smtplib.SMTPAuthenticationError as e:
+            print(f"[ERROR] SMTP 인증 실패: {e}")
+            raise HTTPException(status_code=500, detail=f"메일 인증에 실패했습니다. Gmail 앱 비밀번호를 확인해주세요: {str(e)}")
+        except smtplib.SMTPException as e:
+            print(f"[ERROR] SMTP 오류: {e}")
+            raise HTTPException(status_code=500, detail=f"SMTP 오류가 발생했습니다: {str(e)}")
         except Exception as e:
-            print("메일 전송 실패:", e)
-            raise HTTPException(status_code=500, detail=f"메일 전송에 실패했습니다: {str(e)}")
+            print(f"[ERROR] 메일 전송 실패: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"메일 전송에 실패했습니다: {type(e).__name__}: {str(e)}")
