@@ -68,7 +68,14 @@ class UserService:
         return True
 
 
-    def send_email(user_id: str, text: str, db: Session, missing_id: str) -> bool:
+    def send_email(self, user_id: str, text: str, db: Session, missing_id: str) -> bool:
+        if not user_id:
+            raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+        if not missing_id:
+            raise HTTPException(status_code=400, detail="게시글 ID가 필요합니다.")
+        if not text:
+            raise HTTPException(status_code=400, detail="메일 내용이 필요합니다.")
+            
         user_repo = UserRepository(db)
         post_repo = PostRepository(db)
         subject = "타임브릿지에 연락이 도착하였습니다."
@@ -78,8 +85,15 @@ class UserService:
         smtp_port = 587
         sender_email = "nhw4567@gmail.com"
         sender_password = os.getenv("GMAIL_APP_PASSWORD")  # 환경 변수에서 불러오기
+        
+        if not sender_password:
+            print("경고: GMAIL_APP_PASSWORD 환경 변수가 설정되지 않았습니다.")
+            raise HTTPException(status_code=500, detail="메일 서버 설정 오류입니다.")
 
         # missing_id로 게시글 작성자 찾기
+        if not missing_id or len(missing_id) == 0:
+            raise HTTPException(status_code=400, detail="잘못된 게시글 ID입니다.")
+            
         if missing_id[0] == "m":
             type = 2
         else:
@@ -120,4 +134,4 @@ class UserService:
             return True
         except Exception as e:
             print("메일 전송 실패:", e)
-            raise HTTPException(status_code=500, detail="메일 전송에 실패했습니다.")
+            raise HTTPException(status_code=500, detail=f"메일 전송에 실패했습니다: {str(e)}")
