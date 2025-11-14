@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, CHAR, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, CHAR, Text, ForeignKey, Boolean
 from database.database import Base
 class MissingPost(Base):
     __tablename__ = "missing_post"
@@ -11,6 +11,7 @@ class MissingPost(Base):
     missing_birth = Column(Date)
     missing_place = Column(String(100))
     missing_extra_evidence = Column(String(255))
+    isAccept = Column(Boolean, nullable=False, default=False)
 
     # FK
     user_id = Column(String(45), ForeignKey("users.user_id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
@@ -31,6 +32,7 @@ class FamilyPost(Base):
     missing_situation = Column(Text)
     missing_extra_evidence = Column(Text)
     missing_place = Column(String(100))
+    isAccept = Column(Boolean, nullable=True, default=False)
 
     # FK
     user_id = Column(String(45), ForeignKey("users.user_id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)

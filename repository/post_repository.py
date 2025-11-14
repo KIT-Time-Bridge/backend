@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from repository.post_model import FamilyPost, MissingPost
-from sqlalchemy import func, cast, Integer
+from sqlalchemy import func, cast, Integer, or_, and_
 from typing import Optional
 from datetime import date, datetime
 import math
@@ -117,13 +117,14 @@ class PostRepository:
     def get_all_missing_fp(self, pageNum: int,  pageSize: int = 12, search_keywords: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
         offset = (pageNum - 1) * pageSize
 
-        # ✅ 게시글 데이터 조회
-        query = self.db.query(FamilyPost)
+        # ✅ 게시글 데이터 조회 (승인된 게시글만)
+        query = self.db.query(FamilyPost).filter(
+            (FamilyPost.isAccept == True) | (FamilyPost.isAccept.is_(None))
+        )
 
         # 통합 검색: search_keywords를 이름, 실종상황, 추가단서에서 모두 검색
         if search_keywords:
             keywords = search_keywords.split()  # 띄어쓰기로 키워드 분리
-            from sqlalchemy import or_
             conditions = []
             for keyword in keywords:
                 keyword_condition = or_(
@@ -134,7 +135,6 @@ class PostRepository:
                 conditions.append(keyword_condition)
             if conditions:
                 # 모든 키워드가 포함되어야 함 (AND 조건)
-                from sqlalchemy import and_
                 query = query.filter(and_(*conditions))
         
         if gender_id:
@@ -173,13 +173,12 @@ class PostRepository:
     def get_all_missing_mp(self, pageNum: int,  pageSize: int = 12, search_keywords: Optional[str] = None, gender_id: Optional[int] = None, missing_birth: Optional[str] = None, missing_date: Optional[str] = None, missing_place: Optional[str] = None):
         offset = (pageNum - 1) * pageSize
 
-        # ✅ 게시글 데이터 조회
-        query = self.db.query(MissingPost)
+        # ✅ 게시글 데이터 조회 (승인된 게시글만)
+        query = self.db.query(MissingPost).filter(MissingPost.isAccept == True)
 
         # 통합 검색: search_keywords를 이름, 실종상황, 추가단서에서 모두 검색
         if search_keywords:
             keywords = search_keywords.split()  # 띄어쓰기로 키워드 분리
-            from sqlalchemy import or_
             conditions = []
             for keyword in keywords:
                 keyword_condition = or_(
@@ -190,7 +189,6 @@ class PostRepository:
                 conditions.append(keyword_condition)
             if conditions:
                 # 모든 키워드가 포함되어야 함 (AND 조건)
-                from sqlalchemy import and_
                 query = query.filter(and_(*conditions))
         
         if gender_id:

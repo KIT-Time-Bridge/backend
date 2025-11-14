@@ -44,6 +44,7 @@ class UserService:
             user_email=data.email,
             user_pw=hashed_pw,
             birthday=data.birth,
+            isAdmin=False,  # 회원가입 시 일반 사용자로 설정
         )
 
         # 4) 저장 + 트랜잭션 커밋(서비스에서)

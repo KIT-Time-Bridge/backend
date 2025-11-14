@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String,Date
+from sqlalchemy import Column, Integer, String, Date, Boolean
 from database.database import Base
 
 class User(Base):
@@ -8,6 +8,7 @@ class User(Base):
     user_email = Column(String(100), unique=True, index=True)  # 길이 지정
     user_pw    = Column(String(255))   # 비밀번호 해시는 길게 잡는 게 안전
     birthday   = Column(Date)
+    isAdmin    = Column(Boolean, nullable=True)
 
     class Config:
         orm_mode = True
