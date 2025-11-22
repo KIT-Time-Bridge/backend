@@ -37,7 +37,7 @@ class PostRepository:
         fp_id: str,
         face_img_origin: str,
         face_img_aging: str,
-        photo_age: int,
+        photo_age: Optional[int],
         missing_birth: date,
         missing_date: Optional[date],
         missing_name: str,

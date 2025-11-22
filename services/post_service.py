@@ -31,7 +31,7 @@ text_similarity_url = "http://localhost:8003/api/multilabel/similarity"  # 텍�
 class PostService:
 
     # ✅ Aging 요청
-    async def img_aging(self, missing_birth: date, img: UploadFile):
+    async def img_aging(self, missing_birth: date, img: UploadFile, source_age: int):
         today = date.today()
         target_age = today.year - missing_birth.year
         if (today.month, today.day) < (missing_birth.month, missing_birth.day):
@@ -41,7 +41,10 @@ class PostService:
 
         async with httpx.AsyncClient() as client:
             files = {"file": (img.filename, file_bytes, img.content_type)}
-            resp = await client.post(f"{AGING_SERVER}?target_age={target_age}", files=files)
+            resp = await client.post(
+                f"{AGING_SERVER}?source_age={source_age}&target_age={target_age}", 
+                files=files
+            )
 
         if resp.status_code != 200:
             raise HTTPException(status_code=500, detail=f"AI 서버 요청 실패: {resp.text}")

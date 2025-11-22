@@ -7,9 +7,9 @@ from typing import Optional
 from fastapi import UploadFile
 
 class PostController:
-    async def img_aging(self, missing_birth,img):
+    async def img_aging(self, missing_birth, img, photo_age):
         post_service=PostService()
-        return await post_service.img_aging(missing_birth, img)
+        return await post_service.img_aging(missing_birth, img, photo_age)
     async def post_upload(
         self,
         session_id: str,

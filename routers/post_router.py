@@ -62,10 +62,11 @@ async def create_post(
 @router.post("/img_aging")
 async def img_aging(
     img: UploadFile = File(...),       # 업로드된 이미지 파일
-    missing_birth: date = Form(...)   # 실종자의 생년월일
+    missing_birth: date = Form(...),   # 실종자의 생년월일
+    photo_age: int = Form(...)          # 사진 촬영 당시 나이
 ):
   post_controller=PostController()
-  return await post_controller.img_aging(missing_birth, img)
+  return await post_controller.img_aging(missing_birth, img, photo_age)
 
 @router.post("/register_missing_search")
 def register_missing_search(request:Request, db: Session = Depends(get_db)):
