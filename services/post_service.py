@@ -11,17 +11,21 @@ import httpx
 
 # 벡터DB/유사도 서버 (insert/update/delete)
 AI_SERVERS_Insert = [
-    "http://localhost:8002/insert",
+    "http://localhost:8002/insert",  # 이미지 유사도 서버 (기존)
+    "http://localhost:8003/api/multilabel/insert",  # 텍스트 기반 이미지 유사도 서버 (image-classification)
 ]
 AI_SERVERS_Update = [
-    "http://localhost:8002/update",
+    "http://localhost:8002/update",  # 이미지 유사도 서버 (기존)
+    "http://localhost:8003/api/multilabel/update",  # 텍스트 기반 이미지 유사도 서버 (image-classification)
 ]
 AI_SERVERS_Delete = [
-    "http://localhost:8002/delete",
+    "http://localhost:8002/delete",  # 이미지 유사도 서버 (기존)
+    "http://localhost:8003/api/multilabel/delete",  # 텍스트 기반 이미지 유사도 서버 (image-classification)
 ]
 # 에이징 전용 서버
 AGING_SERVER = "http://localhost:8000/generate"
-img_url = "http://localhost:8002/similarity"
+img_url = "http://localhost:8002/similarity"  # 이미지 유사도 서버
+text_similarity_url = "http://localhost:8003/api/multilabel/similarity"  # 텍스트 기반 이미지 유사도 서버
 
 
 class PostService:
