@@ -132,6 +132,12 @@ async def get_image_similarity(missingId:str,request:Request, db: Session = Depe
     session_id=request.session.get("session_id")
     return await post_controller.image_similarity(missingId, db, session_id )
 
+@router.post("/text_similarity")
+async def get_text_similarity(missingId:str,request:Request, db: Session = Depends(get_db)):
+    post_controller=PostController()
+    session_id=request.session.get("session_id")
+    return await post_controller.text_similarity(missingId, db, session_id )
+
 @router.get("/pending")
 def get_pending_posts(request:Request, db: Session = Depends(get_db)):
     """승인 대기 게시글 조회 (관리자 전용)"""

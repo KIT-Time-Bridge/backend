@@ -253,6 +253,100 @@ class PostService:
             print(f"[INFO] AI 서버 업데이트 조건 불충족 → ai_send_needed={ai_send_needed}, ai_file={ai_file}")
 
         return True
+    
+    # ✅ 텍스트 기반 이미지 유사도 검색
+    async def text_similarity(
+        self,
+        missing_id: str,
+        db,
+        exclude_user_id: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        repo = PostRepository(db)
+
+        # 1) 타깃 로드 + 직렬화 함수/타입 결정
+        if not missing_id:
+            raise HTTPException(status_code=400, detail="missing_id가 필요해요.")
+
+        if missing_id[0] == "m":
+            target_post = repo.get_missing_post_by_id(missing_id)
+            serialize_fn = self.serialize_missing_post
+            type_value = 2
+        else:
+            target_post = repo.get_family_post_by_id(missing_id)
+            serialize_fn = self.serialize_family_post
+            type_value = 1
+
+        if not target_post:
+            raise HTTPException(status_code=404, detail="타깃 게시글을 찾을 수 없어요.")
+
+        # 2) 외부 텍스트 기반 이미지 유사도 API 호출
+        payload = {
+            "type": type_value,
+            "gender": getattr(target_post, "gender_id", None),
+            "missingId": missing_id
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.get(text_similarity_url, params=payload)
+            resp.raise_for_status()
+            data = resp.json()
+        except httpx.HTTPError as e:
+            raise HTTPException(status_code=502, detail=f"텍스트 기반 유사도 서비스 오류: {str(e)}")
+
+        # 3) 결과 정렬 (score desc)
+        raw_results: List[Dict[str, Any]] = sorted(
+            data.get("result", []),
+            key=lambda r: r.get("score", 0.0),
+            reverse=True
+        )
+
+        # 4) 타깃 자신/내 글 제외 필터링
+        filtered_results: List[Dict[str, Any]] = []
+        for r in raw_results:
+            sim_id = r.get("missingId")
+            score = r.get("score", 0.0)
+            if not sim_id:
+                continue
+            if sim_id == missing_id:
+                continue  # 타깃 자신 제외
+
+            filtered_results.append({"missingId": sim_id, "score": score})
+
+        # (선택) 상위 N개로 자르기
+        if limit is not None and limit > 0:
+            filtered_results = filtered_results[:limit]
+
+        # 5) 결과를 실제 게시글로 변환 + 내 글 제외
+        similar_posts = []
+        for item in filtered_results:
+            sim_id, score = item["missingId"], item["score"]
+
+            if sim_id[0] == "m":
+                sim_post = repo.get_missing_post_by_id(sim_id)
+                if not sim_post:
+                    continue
+                # 내 글 제외
+                if exclude_user_id and getattr(sim_post, "user_id", None) == exclude_user_id:
+                    continue
+                sim_serialized = self.serialize_missing_post(sim_post)
+            else:
+                sim_post = repo.get_family_post_by_id(sim_id)
+                if not sim_post:
+                    continue
+                # 내 글 제외
+                if exclude_user_id and getattr(sim_post, "user_id", None) == exclude_user_id:
+                    continue
+                sim_serialized = self.serialize_family_post(sim_post)
+
+            similar_posts.append({"post": sim_serialized, "score": score})
+
+        return {
+            "targetPost": serialize_fn(target_post),
+            "similarPosts": similar_posts
+        }
+    
      # ✅ 이미지 유사도 검색
     async def image_similarity(
         self,

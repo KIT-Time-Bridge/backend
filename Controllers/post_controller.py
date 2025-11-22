@@ -110,6 +110,12 @@ class PostController:
         user_id=session_manager.get_user(session_id)
         return await service.image_similarity(missingId,db, user_id)
     
+    async def text_similarity(self, missingId, db, session_id):
+        service=PostService()
+        session_manager=SessionManager()
+        user_id=session_manager.get_user(session_id)
+        return await service.text_similarity(missingId,db, user_id)
+    
     def get_pending_posts(self, db: Session):
         """승인 대기 게시글 조회"""
         service = PostService()
