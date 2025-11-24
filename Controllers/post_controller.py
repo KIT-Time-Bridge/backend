@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from services.session_service import SessionManager
 from datetime import date
 from services.post_service import PostService
-from typing import Optional
+from typing import Optional, Dict
 from fastapi import UploadFile
 
 class PostController:
@@ -110,11 +110,11 @@ class PostController:
         user_id=session_manager.get_user(session_id)
         return await service.image_similarity(missingId,db, user_id)
     
-    async def text_similarity(self, missingId, db, session_id):
+    async def multimodal_similarity(self, attributes, type_value, gender, db, session_id):
         service=PostService()
         session_manager=SessionManager()
         user_id=session_manager.get_user(session_id)
-        return await service.text_similarity(missingId,db, user_id)
+        return await service.multimodal_similarity(attributes, type_value, gender, db, user_id)
     
     def get_pending_posts(self, db: Session):
         """승인 대기 게시글 조회"""

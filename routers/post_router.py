@@ -1,6 +1,6 @@
 # routers/post_router.py
 import os
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Request, Body
 from sqlalchemy.orm import Session
 from database.database import get_db
 from typing import Optional
@@ -9,7 +9,6 @@ from fastapi.responses import StreamingResponse
 from io import BytesIO
 import httpx
 from Controllers.post_controller import PostController
-from fastapi import Request
 
 import shutil
 
@@ -133,11 +132,31 @@ async def get_image_similarity(missingId:str,request:Request, db: Session = Depe
     session_id=request.session.get("session_id")
     return await post_controller.image_similarity(missingId, db, session_id )
 
-@router.post("/text_similarity")
-async def get_text_similarity(missingId:str,request:Request, db: Session = Depends(get_db)):
-    post_controller=PostController()
-    session_id=request.session.get("session_id")
-    return await post_controller.text_similarity(missingId, db, session_id )
+@router.post("/multimodal_similarity")
+async def get_multimodal_similarity(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    from pydantic import BaseModel
+    
+    class MultimodalSimilarityRequest(BaseModel):
+        type: int
+        attributes: dict
+        gender: Optional[int] = None
+    
+    # Request body를 JSON으로 파싱
+    body = await request.json()
+    req_data = MultimodalSimilarityRequest(**body)
+    
+    post_controller = PostController()
+    session_id = request.session.get("session_id")
+    return await post_controller.multimodal_similarity(
+        req_data.attributes, 
+        req_data.type, 
+        req_data.gender,
+        db, 
+        session_id
+    )
 
 @router.get("/pending")
 def get_pending_posts(request:Request, db: Session = Depends(get_db)):

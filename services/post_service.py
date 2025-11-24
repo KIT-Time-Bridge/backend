@@ -4,7 +4,7 @@ from fastapi.responses import StreamingResponse
 from repository.post_repository import PostRepository
 from io import BytesIO
 from sqlalchemy.orm import Session
-from typing import Optional, Dict, Any,List
+from typing import Optional, Dict, Any, List
 import os
 import shutil
 import httpx
@@ -25,7 +25,6 @@ AI_SERVERS_Delete = [
 # 에이징 전용 서버
 AGING_SERVER = "http://localhost:8000/generate"
 img_url = "http://localhost:8002/similarity"  # 이미지 유사도 서버
-text_similarity_url = "http://localhost:8003/api/multilabel/similarity"  # 텍스트 기반 이미지 유사도 서버
 
 
 class PostService:
@@ -257,75 +256,63 @@ class PostService:
 
         return True
     
-    # ✅ 텍스트 기반 이미지 유사도 검색
-    async def text_similarity(
+    # ✅ 멀티모달 유사도 검색 (얼굴 특징 속성 기반)
+    async def multimodal_similarity(
         self,
-        missing_id: str,
-        db,
+        attributes: Dict[str, str],
+        type_value: int,
+        gender: Optional[int] = None,
+        db=None,
         exclude_user_id: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Dict[str, Any]:
+        """
+        얼굴 특징 속성을 직접 받아서 유사 사용자 검색
+        - 프론트엔드에서 선택한 얼굴 특징 속성 기반
+        - image-classification 서버로 전송하여 similarity 검색
+        """
         repo = PostRepository(db)
-
-        # 1) 타깃 로드 + 직렬화 함수/타입 결정
-        if not missing_id:
-            raise HTTPException(status_code=400, detail="missing_id가 필요해요.")
-
-        if missing_id[0] == "m":
-            target_post = repo.get_missing_post_by_id(missing_id)
-            serialize_fn = self.serialize_missing_post
-            type_value = 2
-        else:
-            target_post = repo.get_family_post_by_id(missing_id)
-            serialize_fn = self.serialize_family_post
-            type_value = 1
-
-        if not target_post:
-            raise HTTPException(status_code=404, detail="타깃 게시글을 찾을 수 없어요.")
-
-        # 2) 외부 텍스트 기반 이미지 유사도 API 호출
+        
+        # gender가 없으면 기본값 1 (male)
+        if gender is None:
+            gender = 1
+        
+        # 1) image-classification 서버로 얼굴 특징 속성 전송
+        multimodal_similarity_url = "http://localhost:8003/api/multilabel/similarity"
         payload = {
+            "attributes": attributes,
             "type": type_value,
-            "gender": getattr(target_post, "gender_id", None),
-            "missingId": missing_id
+            "gender": gender
         }
-
+        
         try:
             async with httpx.AsyncClient(timeout=10) as client:
-                resp = await client.get(text_similarity_url, params=payload)
+                resp = await client.post(multimodal_similarity_url, json=payload)
             resp.raise_for_status()
             data = resp.json()
         except httpx.HTTPError as e:
-            raise HTTPException(status_code=502, detail=f"텍스트 기반 유사도 서비스 오류: {str(e)}")
-
-        # 3) 결과 정렬 (score desc)
+            raise HTTPException(status_code=502, detail=f"멀티모달 유사도 서비스 오류: {str(e)}")
+        
+        # 2) 결과 정렬 (이미 정렬되어 있을 수 있지만 확인) - similarity_score 또는 score 사용
         raw_results: List[Dict[str, Any]] = sorted(
             data.get("result", []),
-            key=lambda r: r.get("score", 0.0),
+            key=lambda r: r.get("similarity_score", r.get("score", 0.0)),
             reverse=True
         )
-
-        # 4) 타깃 자신/내 글 제외 필터링
-        filtered_results: List[Dict[str, Any]] = []
-        for r in raw_results:
-            sim_id = r.get("missingId")
-            score = r.get("score", 0.0)
+        
+        # 3) (선택) 상위 N개로 자르기
+        if limit is not None and limit > 0:
+            raw_results = raw_results[:limit]
+        
+        # 4) 결과를 실제 게시글로 변환 + 내 글 제외
+        similar_posts = []
+        for item in raw_results:
+            sim_id = item.get("missingId") or item.get("missing_id")  # 두 가지 키 모두 지원
+            score = item.get("similarity_score", item.get("score", 0.0))  # 두 가지 키 모두 지원
             if not sim_id:
                 continue
-            if sim_id == missing_id:
-                continue  # 타깃 자신 제외
-
-            filtered_results.append({"missingId": sim_id, "score": score})
-
-        # (선택) 상위 N개로 자르기
-        if limit is not None and limit > 0:
-            filtered_results = filtered_results[:limit]
-
-        # 5) 결과를 실제 게시글로 변환 + 내 글 제외
-        similar_posts = []
-        for item in filtered_results:
-            sim_id, score = item["missingId"], item["score"]
-
+            
+            # 타입에 따라 게시글 조회
             if sim_id[0] == "m":
                 sim_post = repo.get_missing_post_by_id(sim_id)
                 if not sim_post:
@@ -342,11 +329,10 @@ class PostService:
                 if exclude_user_id and getattr(sim_post, "user_id", None) == exclude_user_id:
                     continue
                 sim_serialized = self.serialize_family_post(sim_post)
-
+            
             similar_posts.append({"post": sim_serialized, "score": score})
-
+        
         return {
-            "targetPost": serialize_fn(target_post),
             "similarPosts": similar_posts
         }
     
