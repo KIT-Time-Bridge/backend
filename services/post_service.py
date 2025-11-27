@@ -79,6 +79,12 @@ class PostService:
             raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
         return post
     
+    async def reject_post(self, db: Session, post_id: str):
+        """게시글 거절 (게시글 삭제 - 이미지 및 AI 서버에서도 삭제)"""
+        # delete_post 메서드를 활용하여 완전히 삭제
+        await self.delete_post(db, post_id)
+        return {"message": "게시글이 거절되었습니다."}
+    
     def register_missing_search(self, user_id: str, db: Session):
         repo = PostRepository(db)
         return repo.get_register_missing_by_id(user_id)
@@ -363,9 +369,10 @@ class PostService:
             raise HTTPException(status_code=404, detail="타깃 게시글을 찾을 수 없어요.")
 
         # 2) 외부 이미지 유사도 API 호출
+        target_gender_id = getattr(target_post, "gender_id", None)
         payload = {
             "type": type_value,
-            "gender": getattr(target_post, "gender_id", None),
+            "gender": target_gender_id,  # Query 파라미터로 전달
             "missingId": missing_id
         }
 
@@ -402,22 +409,35 @@ class PostService:
         if limit is not None and limit > 0:
             filtered_results = filtered_results[:limit]
 
-        # 5) 결과를 실제 게시글로 변환 + 내 글 제외
+        # 5) 결과를 실제 게시글로 변환 + 내 글 제외 + gender 필터링 + 타입 필터링
+        # 실종자(type=2)를 선택하면 가족(type=1, fp_id)만, 가족(type=1)을 선택하면 실종자(type=2, mp_id)만 반환
+        opposite_type_prefix = "f" if type_value == 2 else "m"  # 실종자 선택 시 가족, 가족 선택 시 실종자
+        
         similar_posts = []
         for item in filtered_results:
             sim_id, score = item["missingId"], item["score"]
+
+            # 타입 필터링: 반대 타입만 처리
+            if sim_id[0] != opposite_type_prefix:
+                continue
 
             if sim_id[0] == "m":
                 sim_post = repo.get_missing_post_by_id(sim_id)
                 if not sim_post:
                     continue
+                # gender 필터링 (같은 성별만)
+                if target_gender_id and getattr(sim_post, "gender_id", None) != target_gender_id:
+                    continue
                 # 내 글 제외
                 if exclude_user_id and getattr(sim_post, "user_id", None) == exclude_user_id:
                     continue
                 sim_serialized = self.serialize_missing_post(sim_post)
-            else:
+            else:  # sim_id[0] == "f"
                 sim_post = repo.get_family_post_by_id(sim_id)
                 if not sim_post:
+                    continue
+                # gender 필터링 (같은 성별만)
+                if target_gender_id and getattr(sim_post, "gender_id", None) != target_gender_id:
                     continue
                 # 내 글 제외
                 if exclude_user_id and getattr(sim_post, "user_id", None) == exclude_user_id:

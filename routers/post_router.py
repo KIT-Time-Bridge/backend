@@ -188,6 +188,21 @@ def approve_post(request:Request, post_id: str, db: Session = Depends(get_db)):
     post_controller = PostController()
     return post_controller.approve_post(db, post_id)
 
+@router.post("/reject")
+async def reject_post(request:Request, post_id: str, db: Session = Depends(get_db)):
+    """게시글 거절 (관리자 전용)"""
+    # 관리자 확인
+    from Controllers.user_controller import UserController
+    user_controller = UserController()
+    session_id = request.session.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    if not user_controller.check_is_admin(session_id, db):
+        raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
+    
+    post_controller = PostController()
+    return await post_controller.reject_post(db, post_id)
+
 @router.get("/test")
 def test(req: int):
     return {"id": req, "message": "hello"}
