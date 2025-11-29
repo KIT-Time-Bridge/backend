@@ -100,9 +100,15 @@ class PostService:
     def detail_missing_search(self, db: Session, missing_id: str):
         repo = PostRepository(db)
         if missing_id[0] == "m":
-            return repo.get_missing_post_by_id(missing_id)
+            post = repo.get_missing_post_by_id(missing_id)
+            if post:
+                return self.serialize_missing_post(post)
+            return None
         else:
-            return repo.get_family_post_by_id(missing_id)
+            post = repo.get_family_post_by_id(missing_id)
+            if post:
+                return self.serialize_family_post(post)
+            return None
 
     # ✅ 게시글 삭제
     async def delete_post(self, db: Session, post_id: str) -> bool:

@@ -16,13 +16,19 @@ class SessionManager:
         return session_id
 
     def get_user(self, session_id: str) -> str | None:
-        return self.r.get(f"session:{session_id}")
+        result = self.r.get(f"session:{session_id}")
+        if result:
+            # Redis에서 반환된 값이 bytes일 수 있으므로 decode
+            if isinstance(result, bytes):
+                return result.decode('utf-8')
+            return result
+        return None
 
     def delete_session(self, session_id: str) -> int:
         return self.r.delete(f"session:{session_id}")
 
     def refresh_session(self, session_id: str) -> bool:
-        user_id = self.r.get(f"session:{session_id}")
+        user_id = self.get_user(session_id)
         if user_id:
             self.r.setex(f"session:{session_id}", self.ttl, user_id)
             return True

@@ -70,3 +70,8 @@ class UserController:
             return False
         service = UserService()
         return service.check_is_admin(db, user_id)
+    
+    def get_current_user_id(self, session_id: str) -> str | None:
+        """현재 로그인한 사용자 ID 반환"""
+        session_manager = SessionManager()
+        return session_manager.get_user(session_id)

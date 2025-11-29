@@ -80,3 +80,13 @@ def check_is_admin(request:Request, db: Session = Depends(get_db)):
     controller=UserController()
     is_admin = controller.check_is_admin(session_id, db)
     return {"is_admin": is_admin}
+
+@router.get("/current_user")
+def get_current_user(request:Request):
+    """현재 로그인한 사용자 ID 반환"""
+    session_id=request.session.get("session_id")
+    if not session_id:
+        return {"user_id": None}
+    controller=UserController()
+    user_id = controller.get_current_user_id(session_id)
+    return {"user_id": user_id}
