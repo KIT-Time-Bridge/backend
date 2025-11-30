@@ -320,7 +320,8 @@ class PostService:
             raw_results = raw_results[:limit]
         
         # 4) 결과를 실제 게시글로 변환 + 내 글 제외 + gender 필터링
-        # 가족(type=1) 선택 시에만 gender 필터링을 강제로 적용 (AI 서버가 제대로 필터링하지 않는 경우 대비)
+        # 가족(type=1) 선택 시 실종자(mp_id) 결과에만 gender 필터링을 강제로 적용 (AI 서버가 제대로 필터링하지 않는 경우 대비)
+        # 실종자(type=2) 선택 시에는 원래대로 작동 (AI 서버가 제대로 필터링함)
         similar_posts = []
         for item in raw_results:
             sim_id = item.get("missingId") or item.get("missing_id")  # 두 가지 키 모두 지원
@@ -333,7 +334,7 @@ class PostService:
                 sim_post = repo.get_missing_post_by_id(sim_id)
                 if not sim_post:
                     continue
-                # gender 필터링 (가족 선택 시에만 강제 적용)
+                # gender 필터링 (가족 선택 시 실종자 결과에만 강제 적용)
                 if type_value == 1 and gender is not None and getattr(sim_post, "gender_id", None) != gender:
                     continue
                 # 내 글 제외
@@ -344,8 +345,8 @@ class PostService:
                 sim_post = repo.get_family_post_by_id(sim_id)
                 if not sim_post:
                     continue
-                # gender 필터링 (가족 선택 시에만 강제 적용)
-                if type_value == 1 and gender is not None and getattr(sim_post, "gender_id", None) != gender:
+                # gender 필터링 (실종자 선택 시 가족 결과에만 강제 적용 - 원래는 필요 없지만 안전을 위해)
+                if type_value == 2 and gender is not None and getattr(sim_post, "gender_id", None) != gender:
                     continue
                 # 내 글 제외
                 if exclude_user_id and getattr(sim_post, "user_id", None) == exclude_user_id:
