@@ -121,12 +121,12 @@ class PostController:
         service = PostService()
         return service.get_pending_posts(db)
     
-    def approve_post(self, db: Session, post_id: str):
+    def approve_post(self, db: Session, missing_id: str):
         """게시글 승인"""
         service = PostService()
-        return service.approve_post(db, post_id)
+        return service.approve_post(db, missing_id)
     
-    async def reject_post(self, db: Session, post_id: str):
+    async def reject_post(self, db: Session, missing_id: str):
         """게시글 거절"""
         service = PostService()
-        return await service.reject_post(db, post_id)
+        return await service.reject_post(db, missing_id)

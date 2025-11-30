@@ -65,13 +65,13 @@ class PostService:
             "family_posts": family_posts
         }
     
-    def approve_post(self, db: Session, post_id: str):
+    def approve_post(self, db: Session, missing_id: str):
         """게시글 승인"""
         repo = PostRepository(db)
-        if post_id.startswith("m"):
-            post = repo.approve_missing_post(post_id)
-        elif post_id.startswith("f"):
-            post = repo.approve_family_post(post_id)
+        if missing_id.startswith("m"):
+            post = repo.approve_missing_post(missing_id)
+        elif missing_id.startswith("f"):
+            post = repo.approve_family_post(missing_id)
         else:
             raise HTTPException(status_code=400, detail="잘못된 게시글 ID 형식입니다.")
         
@@ -79,10 +79,10 @@ class PostService:
             raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
         return post
     
-    async def reject_post(self, db: Session, post_id: str):
+    async def reject_post(self, db: Session, missing_id: str):
         """게시글 거절 (게시글 삭제 - 이미지 및 AI 서버에서도 삭제)"""
         # delete_post 메서드를 활용하여 완전히 삭제
-        await self.delete_post(db, post_id)
+        await self.delete_post(db, missing_id)
         return {"message": "게시글이 거절되었습니다."}
     
     def register_missing_search(self, user_id: str, db: Session):
@@ -111,15 +111,15 @@ class PostService:
             return None
 
     # ✅ 게시글 삭제
-    async def delete_post(self, db: Session, post_id: str) -> bool:
+    async def delete_post(self, db: Session, missing_id: str) -> bool:
         repo = PostRepository(db)
 
-        if post_id.startswith("m"):
-            post = repo.get_missing_post_by_id(post_id)
-        elif post_id.startswith("f"):
-            post = repo.get_family_post_by_id(post_id)
+        if missing_id.startswith("m"):
+            post = repo.get_missing_post_by_id(missing_id)
+        elif missing_id.startswith("f"):
+            post = repo.get_family_post_by_id(missing_id)
         else:
-            raise HTTPException(status_code=400, detail="post_id 형식이 잘못되었습니다.")
+            raise HTTPException(status_code=400, detail="missing_id 형식이 잘못되었습니다.")
 
         if not post:
             raise HTTPException(status_code=404, detail="해당 게시글을 찾을 수 없습니다.")
@@ -145,7 +145,7 @@ class PostService:
         repo.delete_missing_post(post)
 
         # AI 서버에 삭제 요청
-        payload = {"post_id": post_id}
+        payload = {"missing_id": missing_id}
         try:
             async with httpx.AsyncClient(timeout=10) as client:
                 for server in AI_SERVERS_Delete:
@@ -209,7 +209,7 @@ class PostService:
             with open(origin_path, "wb") as buffer:
                 shutil.copyfileobj(img_origin.file, buffer)
 
-            origin_url = "{type_dir}/{missing_id}/origin.png"
+            origin_url = f"{type_dir}/{missing_id}/origin.png"
             post.face_img_origin = origin_url
             print(f"[INFO] origin 이미지 교체 완료: {origin_path}")
 
@@ -256,7 +256,11 @@ class PostService:
                             "type": str(type) if type else ("1" if missing_id.startswith("f") else "2"),
                             "missing_id": missing_id,
                         }
-                        resp = await client.post(server, data=data, files=files)
+                        # image-classification-backend는 PUT 메서드 사용
+                        if "/api/multilabel/update" in server:
+                            resp = await client.put(server, data=data, files=files)
+                        else:
+                            resp = await client.post(server, data=data, files=files)
                         if resp.status_code == 200:
                             print(f"[INFO] AI 서버 업데이트 요청 성공: {server}")
                         else:
@@ -517,28 +521,28 @@ class PostService:
 
         if type == 1:  # FamilyPost
             num = repo.get_max_fp() + 1
-            post_id = "f" + str(num).zfill(7)
+            missing_id = "f" + str(num).zfill(7)
         elif type == 2:  # MissingPost
             num = repo.get_max_mp() + 1
-            post_id = "m" + str(num).zfill(7)
+            missing_id = "m" + str(num).zfill(7)
         else:
             raise HTTPException(status_code=400, detail="잘못된 type 값입니다. (1=FamilyPost, 2=MissingPost)")
 
-        print(f"[DEBUG] 생성된 post_id={post_id}")
+        print(f"[DEBUG] 생성된 missing_id={missing_id}")
 
         type_dir = "family" if type == 1 else "missing"
-        base_dir = os.path.join("img_store", type_dir, post_id)
+        base_dir = os.path.join("img_store", type_dir, missing_id)
         os.makedirs(base_dir, exist_ok=True)
 
         origin_path = os.path.join(base_dir, "origin.png") if img_origin else None
         aging_path = os.path.join(base_dir, "aging.png") if img_aging else None
 
-        origin_url = f"{type_dir}/{post_id}/origin.png" if img_origin else None
-        aging_url = f"{type_dir}/{post_id}/aging.png" if img_aging else None
+        origin_url = f"{type_dir}/{missing_id}/origin.png" if img_origin else None
+        aging_url = f"{type_dir}/{missing_id}/aging.png" if img_aging else None
 
         if type == 1:
             repo.add_fp(
-                fp_id=post_id,
+                fp_id=missing_id,
                 face_img_origin=origin_url,
                 face_img_aging=aging_url,
                 photo_age=photo_age,
@@ -562,7 +566,7 @@ class PostService:
 
         elif type == 2:
             repo.add_mp(
-                mp_id=post_id,
+                mp_id=missing_id,
                 face_img_origin=origin_url,
                 missing_date=missing_date,
                 missing_name=missing_name,
@@ -597,7 +601,7 @@ class PostService:
                         data = {
                             "gender_id": str(gender_id),
                             "type": str(type),
-                            "missing_id": post_id,
+                            "missing_id": missing_id,
                         }
                         resp = await client.post(server, data=data, files=files)
                         if resp.status_code == 200:

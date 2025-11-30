@@ -174,7 +174,7 @@ def get_pending_posts(request:Request, db: Session = Depends(get_db)):
     return post_controller.get_pending_posts(db)
 
 @router.post("/approve")
-def approve_post(request:Request, post_id: str, db: Session = Depends(get_db)):
+def approve_post(request:Request, missing_id: str, db: Session = Depends(get_db)):
     """게시글 승인 (관리자 전용)"""
     # 관리자 확인
     from Controllers.user_controller import UserController
@@ -186,10 +186,10 @@ def approve_post(request:Request, post_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
     
     post_controller = PostController()
-    return post_controller.approve_post(db, post_id)
+    return post_controller.approve_post(db, missing_id)
 
 @router.post("/reject")
-async def reject_post(request:Request, post_id: str, db: Session = Depends(get_db)):
+async def reject_post(request:Request, missing_id: str, db: Session = Depends(get_db)):
     """게시글 거절 (관리자 전용)"""
     # 관리자 확인
     from Controllers.user_controller import UserController
@@ -201,7 +201,7 @@ async def reject_post(request:Request, post_id: str, db: Session = Depends(get_d
         raise HTTPException(status_code=403, detail="관리자 권한이 필요합니다.")
     
     post_controller = PostController()
-    return await post_controller.reject_post(db, post_id)
+    return await post_controller.reject_post(db, missing_id)
 
 @router.get("/test")
 def test(req: int):
