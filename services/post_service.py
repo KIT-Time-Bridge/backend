@@ -289,17 +289,16 @@ class PostService:
         """
         repo = PostRepository(db)
         
-        # gender가 없으면 기본값 1 (male)
-        if gender is None:
-            gender = 1
-        
         # 1) image-classification 서버로 얼굴 특징 속성 전송
         multimodal_similarity_url = "http://localhost:8003/api/multilabel/similarity"
         payload = {
             "attributes": attributes,
             "type": type_value,
-            "gender": gender
         }
+        
+        # gender가 선택된 경우에만 추가
+        if gender is not None:
+            payload["gender"] = gender
         
         try:
             async with httpx.AsyncClient(timeout=10) as client:
